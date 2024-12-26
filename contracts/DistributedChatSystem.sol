@@ -7,7 +7,7 @@ contract DistributedChatSystem {
         string userId;
         string publicKey;
     }
-    
+
     struct Message {
         string chatId;
         string encryptedContent;
@@ -21,15 +21,30 @@ contract DistributedChatSystem {
         uint256 messageCount;
     }
 
+    /*
+        mapping structure of project
+        1. map of userId to User data
+        2. map of chatId to Chat data
+        3. map of messageId to Message data
+    */
     mapping(string => User) private users;
     mapping(string => Chat) private chats;
     mapping(string => Message[]) private chatMessages;
 
+    /*
+        system events
+        1. when user register, we log userId and publicKey in transaction logs
+        2. when a chat created, chatId and participantIds log in transaction logs
+        3. when a message send, chatId, senderId and timestamp of message logged.
+    */
     event UserRegistered(string userId, string publicKey);
     event ChatCreated(string chatId, string participant1, string participant2);
     event MessageSent(string chatId, string senderId, uint256 timestamp);
 
-
+    /*
+        this public method used for register a user with a userId and publicKey
+        - user shouldn't already registered in system
+    */
     function registerUser(string memory userId, string memory publicKey) public {
         require(bytes(users[userId].userId).length == 0, "User with this userId already registered");
         users[userId] = User({
@@ -39,7 +54,11 @@ contract DistributedChatSystem {
         emit UserRegistered(userId, publicKey);
     }
 
-     
+     /*
+        this public method used for creation a chat
+        - chat shouldn't registered before with this id
+        - participants should already registered in system
+    */
     function createChat(
         string memory chatId,
         string memory participant1,
@@ -60,7 +79,11 @@ contract DistributedChatSystem {
         emit ChatCreated(chatId, participant1, participant2);
     }
 
-
+    /*
+        this public method used for sending a message
+        - chat should already exists in system
+        - sender should be one of chat participants
+    */
     function sendMessage(
         string memory chatId,
         string memory encryptedContent,
@@ -85,11 +108,19 @@ contract DistributedChatSystem {
         emit MessageSent(chatId, senderId, block.timestamp);
     }
 
+    /*
+        view method to get publicKey of a user by userId
+        - user should already registered
+    */
     function getUserPublicKey(string memory userId) public view returns (string memory) {
         require(bytes(users[userId].userId).length > 0, "User not registered");
         return users[userId].publicKey;
     }
 
+    /*
+        view method to get chat information(participants, and message counts)
+        - chat should already exists
+    */
     function getChatInfo(string memory chatId)
         public
         view
@@ -104,12 +135,19 @@ contract DistributedChatSystem {
         return (chat.participant1, chat.participant2, chat.messageCount);
     }
 
-
+    /*
+        view method to get a chat messages
+        - chat should already exists
+        - chat should have minimum fromIndex messages
+    */
     function getChatMessages(string memory chatId, uint256 fromIndex)
         public
         view
         returns (Message[] memory messages, uint256 nextIndex)
     {
+        Chat storage chat = chats[chatId];
+        require(bytes(chat.participant1).length > 0, "Chat does not exist");
+
         Message[] storage allMessages = chatMessages[chatId];
         require(fromIndex < allMessages.length, "Invalid fromIndex");
 
