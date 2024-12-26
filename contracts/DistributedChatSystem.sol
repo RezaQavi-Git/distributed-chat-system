@@ -64,7 +64,7 @@ contract DistributedChatSystem {
         string memory participant1,
         string memory participant2,
         string memory initialMessage
-    ) public checkChatExistence checkUserExistence {
+    ) public {
         require(bytes(chats[chatId].participant1).length == 0, "Chat already exists");
         require(bytes(users[participant1].userId).length > 0, "Participant1 not registered");
         require(bytes(users[participant2].userId).length > 0, "Participant2 not registered");
